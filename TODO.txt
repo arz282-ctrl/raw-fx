@@ -1,0 +1,117 @@
+RAW Fx STUDIO — Implementation TODO
+====================================
+Source of vision: project prompts + ui-ux-pro-max-skill database
+(Hero-Centric, Modern Dark Cinema, Parallax Storytelling, Reduced Motion UX rules)
+
+---------------------------------------------------------------
+1. CURRENT STATE — Quick Audit
+---------------------------------------------------------------
+Routes:
+- /         -> Motion homepage (FullScreenScrollFX, 7 frames)  ✅
+- /gallery  -> Secondary landing + sections                    ✅
+- Motion route removed                                         ✅
+- Navbar: "Motion / Gallery / Contact" + Book Now              ✅
+- Lenis smooth scroll: global, re-init per route               ✅
+- Page transition shell + cinematic overlay bridge             ✅
+- First image opacity = 1.0; rest cinematic 0.85               ✅
+- Hero intro overlay (fade-out on first load)                  ✅
+
+What is OFF vs vision:
+A. Motion homepage scroll feels too literal (1:1 wheel) — not cinematic-tour pacing.
+B. Hero intro trigger (CTA-touches-header-line) is timer-fallback, not anchored to actual layout.
+C. No prefers-reduced-motion fallback (DB flagged this as HIGH severity).
+D. Route fade-to-black bridge is single layer; vision says layered: dim → nav fade → black rise → glow diffuse → reveal.
+E. Typography hierarchy is good but lacks oversized statement scale (DB: clamp 3–12rem on luxury hero).
+F. Background atmosphere is mostly static — DB recommends ambient blob oscillation + grain.
+G. Gallery hero + sections feel detached — needs entry choreography & section-level reveal presets.
+H. No magnetic CTA / micro-spring on Book Now (called out in original prompt).
+I. Performance: unbounded image render (no width/height + priority attributes); next/image not used.
+J. Accessibility: focus styles for nav links + keyboard nav for FullScreenFX frames missing.
+
+---------------------------------------------------------------
+2. TODO — Prioritized Implementation Plan
+---------------------------------------------------------------
+
+P0 — Cinematic Foundations (must-have to match vision)
+[ ] Add prefers-reduced-motion handling in:
+    - SmoothScrollProvider (skip Lenis if reduced motion)
+    - FullScreenScrollFX (already partial — verify all timelines)
+    - PageTransitionShell (instant fade vs animated bridge)
+[ ] Tighten frame pacing on motion homepage:
+    - durations.change 0.7 -> 0.95
+    - durations.snap 800 -> 1100
+    - parallaxAmount 4 -> 6
+    - Add subtle scale (1.02 -> 1.0) per frame for filmic depth
+[ ] Anchor hero intro trigger to actual nav-bottom line:
+    - Replace timer fallback with IntersectionObserver-on-CTA / nav rect math
+    - Maintain 0.2s anticipation + 1.4s reveal
+[ ] Layered fade-to-black bridge for route transitions (1.2–1.6s):
+    Stage 1 (0.0–0.25): hero dim + nav softens
+    Stage 2 (0.25–0.65): black overlay rises (translateY + opacity)
+    Stage 3 (0.55–0.95): ambient green glow diffuses
+    Stage 4 (0.7–1.4): new page fades up with stagger
+
+P1 — Visual Identity Upgrades
+[ ] Typography pacing: hero centerline title -> clamp(2.4rem, 8vw, 7rem)
+[ ] Add ambient blob layer (2–3 absolute divs, blur 60–90px, opacity 0.06–0.10, slow translate oscillation)
+[ ] Add cinematic film grain layer at body level (already partial — increase quality + repeat tile)
+[ ] Standardize easing token: --ease-cinematic: cubic-bezier(0.22, 1, 0.36, 1)
+[ ] Standardize timing tokens:
+    --t-fast: 280ms, --t-medium: 700ms, --t-slow: 1200ms, --t-bridge: 1450ms
+
+P1 — Interaction Polish
+[ ] Magnetic Book Now CTA (mouse-follow translate within ~12px radius, spring-back)
+[ ] Nav links: subtle underline-glow on hover (opacity + scaleX line)
+[ ] FullScreenFX: keyboard arrow Up/Down + space to advance frame
+[ ] Progress bar: replace static fill with gsap quickTo for sub-frame smoothness
+
+P2 — Gallery Page Choreography
+[ ] Add hero entry choreography on /gallery:
+    - title splittext-style line reveal
+    - subtitle delayed with mask
+    - image grid stagger (y 24 -> 0, opacity 0 -> 1)
+[ ] Section reveal preset hook (useReveal already exists — extend with stagger groups)
+[ ] Add subtle parallax on gallery item hover (translate + filter brightness)
+
+P2 — Performance & Engineering
+[ ] Replace <img> with next/image where above-the-fold (priority hint on first hero image)
+[ ] Wrap heavy GSAP timelines in gsap.context() for safe cleanup on route change
+[ ] Add Lenis ↔ ScrollTrigger sync (lenis.on('scroll', ScrollTrigger.update))
+[ ] Memoize section arrays so FullScreenFX doesn't re-key on render
+[ ] Audit will-change usage (apply only on active frame, remove after)
+
+P3 — Accessibility / QA
+[ ] Visible focus rings on nav + CTA (outline 2px rgba(255,255,255,0.5), offset 4px)
+[ ] aria-current on active nav link
+[ ] Frame announcer (visually hidden live region) on FullScreenFX index change
+[ ] Test full reduced-motion path (no parallax, no overlay rise, instant fades)
+
+P3 — Polish
+[ ] Remove transient build artifacts from .next when restructuring routes
+[ ] Document motion tokens + patterns in /AGENTS.md
+[ ] Add /AGENTS.md note: dev URL changes (port hopping); use lsof to find current
+[ ] Consolidate duplicate hero intro CSS in globals.css
+
+---------------------------------------------------------------
+3. ACCEPTANCE CRITERIA (vision check)
+---------------------------------------------------------------
+- Homepage: dark first paint, no abrupt content stack underneath, only motion frames.
+- 7-frame scroll works smoothly with cinematic pacing (~1s/frame).
+- Route transition feels filmic: dim → black rise → glow → reveal.
+- prefers-reduced-motion users get accessible static experience.
+- Magnetic CTA, glass nav, ambient atmosphere all present.
+- 60fps on mid-range MacBook; no jank on frame change.
+
+---------------------------------------------------------------
+4. EXECUTION ORDER (suggested)
+---------------------------------------------------------------
+1) P0 reduced-motion + frame pacing
+2) P0 hero intro anchored trigger
+3) P0 layered route bridge
+4) P1 typography + tokens + ambient layer
+5) P1 magnetic CTA + nav polish + FX keyboard nav
+6) P2 gallery choreography
+7) P2 performance pass (next/image, gsap.context, Lenis-ScrollTrigger sync)
+8) P3 accessibility + docs
+
+(End of file)
